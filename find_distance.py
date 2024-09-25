@@ -4,9 +4,13 @@ import os
 import galois
 
 codes = [
+    "8_6_3_4",
     "12_9_3_4",
     "16_12_3_4",
     "20_15_3_4",
+    "24_18_3_4",
+    "28_21_3_4",
+    "32_24_3_4",
     "40_30_3_4",
     "60_45_3_4"
 
@@ -77,8 +81,9 @@ for i, code in enumerate(codes):
         #     print('Not a codeword')
         if (np.count_nonzero(encoded_w) < d):
             d = np.count_nonzero(encoded_w)
-
+    qedn = 4
+    qedk = 2
     distances.append(d)
-    print(f"{code}: [[{ccode.n},{ccode.n-np.linalg.matrix_rank(GF(H))},{d}]]")
+    print(f"[[{n},{k},{d}]],\t[[{n**2+(n-k)**2},{k**2},{d}]],\t[[{qedn*(n**2+(n-k)**2)},{qedk*(k**2)},{2*d}]]")
 
 # print(distances)
