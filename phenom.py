@@ -1,10 +1,10 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from classical_code import *
 from quantum_code import *
 from ldpc import bposd_decoder, bp_decoder
 from result_lifetime import Result, save_new_res
 import string, random, argparse
+from pathlib import Path
 
 
 def main(args):
@@ -15,27 +15,26 @@ def main(args):
     qubit_error_rate = float(args.e)
     meas_error_rate = float(args.m)
 
-    # alphabet = string.ascii_letters + string.digits
-    # uuid = ''.join(random.choices(alphabet, k=8))
-
+    res_f_name = f"./results/{Path(qcode_fname).name}_{concat}_{adaptive}_{qubit_error_rate}_{meas_error_rate}.res"
     qcode = read_qcode(qcode_fname)
     concat = 1 if qcode.qedxm and concat else 0
+    adaptive = 1 if qcode.qedxm and adaptive and concat else 0
     Hx, Hz, Lx, Lz = qcode.to_numpy()
 
     if (adaptive == 1):
-        overlapping_x_generators = np.empty(100, dtype=object)
+        overlapping_x_generators = np.empty(qcode.qedxm, dtype=object)
         for i in range(qcode.qedxm):
             tmp = np.array([], dtype=int)
             for j in range(qcode.qedxm, qcode.xm):
                 if np.any(Hx[i] & Hx[j]): tmp = np.append(tmp, j)
             overlapping_x_generators[i] = tmp
 
-        overlapping_z_generators = np.empty(100, dtype=object)
-        # for i in range(concatenatedStabilizersQED.shape[0]):
-        #     tmp = np.array([], dtype=int)
-        #     for j in range(concatenatedStabilizersZQEC.shape[0]):
-        #         if np.any(concatenatedStabilizersQED[i] & concatenatedStabilizersZQEC[j]): tmp = np.append(tmp, j+concatenatedStabilizersQED.shape[0])
-        #     overlapping_z_generators[i] = tmp
+        overlapping_z_generators = np.empty(qcode.qedzm, dtype=object)
+        for i in range(qcode.qedzm):
+            tmp = np.array([], dtype=int)
+            for j in range(qcode.qedzm):
+                if np.any(Hz[i] & Hz[j]): tmp = np.append(tmp, j)
+            overlapping_z_generators[i] = tmp
 
     def get_overlapping(measurements, gen_type=False, not_overlapping=False):
         overlapping_generators = overlapping_x_generators if gen_type else overlapping_z_generators
@@ -44,19 +43,18 @@ def main(args):
             gens_to_measure |= set(overlapping_generators[g])
 
         if not_overlapping:
-            return np.array(list(set(np.arange(100,196)) ^ gens_to_measure))
+            return np.array(list(set(np.arange(qcode.qedxm,qcode.xm)) ^ gens_to_measure))
         else:
             return np.array(list(gens_to_measure))
 
 
-
+    # SHOULD ADD SYNDROME BIT ERRORS TO PCM? e.g. arXiv:2004.11199
     bp_qed_dec = bp_decoder(
         Hx[:100], # the parity check matrix
         error_rate=qubit_error_rate,
-        # channel_probs=new_channel_probs, #assign error_rate to each qubit. This will override "error_rate" input variable
-        max_iter=100, #pcm.shape[1], #the maximum number of iterations for BP)
         bp_method="ps",
-        # osd_method="osd0", #the OSD method. Choose from:  1) "osd_e", "osd_cs", "osd0"
+        max_iter=100, #pcm.shape[1], #the maximum number of iterations for BP)
+        # ms_scaling_factor=0, #min sum scaling factor. If set to zero the variable scaling factor method is used
     )
 
     bp_qed_qec_dec = bposd_decoder(
@@ -79,6 +77,7 @@ def main(args):
     )
 
 
+
     rs = []
     for ii in range(1,num_shots+1):
         num_rounds = 0
@@ -97,10 +96,10 @@ def main(args):
                 guessed_error = bposd_qec_dec.decode(curr_synd)
             elif (concat == 1):
                 # QED + QEC
-                initial_guess = bp_qed_dec.decode(curr_synd[:100])
+                _ = bp_qed_dec.decode(curr_synd[:100])
 
-                ########################
-                # new_channel_probs = np.exp(-bp_qed_dec.log_prob_ratios) # THIS MIGHT NEED TO CHANGE SLIGHTLY
+                ######################## # THIS MIGHT NEED TO CHANGE SLIGHTLY, SOFT INFORMATION DECODING
+                # new_channel_probs = np.exp(-bp_qed_dec.log_prob_ratios)
                 # new_channel_probs = new_channel_probs / np.sum(new_channel_probs)
                 new_channel_probs = 1 / (np.exp(bp_qed_dec.log_prob_ratios) + 1)
                 # new_channel_probs = new_channel_probs / np.sum(new_channel_probs)
@@ -118,14 +117,19 @@ def main(args):
             residual_error = curr_qubit_error ^ guessed_error
             obs = [np.count_nonzero(residual_error[l]) % 2 for l in qcode.Lz]
 
+            # according to arXiv:2311.03307, you should decode perfectly at this point to see if there's a logical error
+
             if np.any(obs):
                 break
 
-        res = Result(concat, adaptive, qcode.n, qcode.k, qubit_error_rate, meas_error_rate, 1, num_rounds, 0)
-        rs.append(res)
+        # res = Result(concat, adaptive, qcode.n, qcode.k, qubit_error_rate, meas_error_rate, 1, num_rounds, 0)
+        rs.append(num_rounds)
 
         if (ii%100==0):
-            save_new_res('./tmp.res', rs)
+            # save_new_res('./tmp.res', rs)
+            with open(res_f_name, '+a') as f:
+                f.write(",".join(map(str, rs)))
+                f.write(",")
             rs = []
 
 
@@ -136,8 +140,8 @@ if __name__ == "__main__":
     parser.add_argument('-c', default=1, help="Concatenated decoding?")
     parser.add_argument('-a', default=1, help="QED+QEC protocol?")
     parser.add_argument('-n', default=1e3, help="Number of shots")
-    parser.add_argument('-e', default=0.001, help="Qubit error rate")
-    parser.add_argument('-m', default=0.001, help="Measurement error rate")
+    parser.add_argument('-e', default=5e-4, help="Qubit error rate")
+    parser.add_argument('-m', default=5e-4, help="Measurement error rate")
 
     args = parser.parse_args()
 
