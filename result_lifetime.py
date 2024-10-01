@@ -1,14 +1,15 @@
 import os.path
 
-column_names_for_simulation = "c,n,k,p_phys,p_meas,no_test,mean,variance"
+column_names_for_simulation = "concat,adapt,n,k,p_phys,p_meas,no_test,mean,variance"
 first_line = column_names_for_simulation + '\n'
 
 class Result:
-    def __init__(self,c,n,k,p_phys,p_meas,no_test,mean,variance):
-        if not (type(c) == int or type(n) == int or type(k) == int or type(no_test) == int or\
+    def __init__(self,concat,adapt,n,k,p_phys,p_meas,no_test,mean,variance):
+        if not (type(concat) == int or type(adapt) == int or type(n) == int or type(k) == int or type(no_test) == int or\
                 type(p_phys) == float or type(p_meas) == float or type(mean) == float or type(variance) == float):
             raise NameError('Bad result format')
-        self.c = c
+        self.concat = concat
+        self.adapt = adapt
         self.n = n
         self.k = k
         self.p_phys = p_phys
@@ -18,14 +19,14 @@ class Result:
         self.variance = variance
 
 def res_to_line(r):
-    line = str(r.c) + ',' + str(r.n) + ',' + str(r.k) + "," +\
+    line = str(r.concat) + ',' + str(r.adapt) + ',' + str(r.n) + ',' + str(r.k) + "," +\
            str(r.p_phys) + ',' + str(r.p_meas) + "," + str(r.no_test) + ',' + str(r.mean) + ',' + str(r.variance) + '\n'
     return line
 
 def line_to_res(line):
     tmp = line.strip('\n').split(',')
-    r = Result(int(tmp[0]),int(tmp[1]),int(tmp[2]),
-               float(tmp[3]),float(tmp[4]),int(tmp[5]),float(tmp[6]),float(tmp[7]))
+    r = Result(int(tmp[0]),int(tmp[1]),int(tmp[2]),int(tmp[3]),
+               float(tmp[4]),float(tmp[5]),int(tmp[6]),float(tmp[7]),float(tmp[8]))
     return r
 
 # Creates a file whose lines are stored in lines_list
@@ -41,12 +42,12 @@ def create_file(file_name, lines_list):
 # r1 and r2 are objects of the class Result
 # This function tries to combine the results r1 and r2.
 def combine_res(r1,r2):
-    if (r1.c == r2.c and r1.n == r2.n and r1.k == r2.k and\
+    if (r1.concat == r2.concat and r1.adapt == r2.adapt and r1.n == r2.n and r1.k == r2.k and\
         r1.p_phys == r2.p_phys and r1.p_meas == r2.p_meas):
         no_test = r1.no_test + r2.no_test
         new_mean = r1.mean + ((r2.mean - r1.mean) / no_test)
         new_variance = r1.variance + ((r2.mean - r1.mean) * (r2.mean - new_mean))
-        return Result(r1.c,r1.n,r1.k,
+        return Result(r1.concat,r1.adapt,r1.n,r1.k,
                       r1.p_phys,r1.p_meas,no_test,new_mean,new_variance)
     return None
 
