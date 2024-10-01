@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import scipy as sp
 import seaborn as sns
 
-qcode = "HGP_C422_400_8.qcode"
+# qcode = "HGP_C422_400_8.qcode"
+qcode = "HGP_400_16.qcode"
+
 concat = 0
 adaptive = 0
 f_path = f"../../results/{qcode.strip('.qcode')}/concat{concat}adaptive{adaptive}/"
