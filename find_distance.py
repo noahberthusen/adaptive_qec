@@ -51,7 +51,7 @@ path, filename = os.path.split(full_path)
 num_iters = 1000
 GF = galois.GF(2)
 for i, code in enumerate(codes):
-    file = os.path.join(path, f'./codes/{code}.code')
+    file = os.path.join(path, f'./codes/ccodes/{code}.code')
     ccode = read_code(file)
     d = ccode.n
     n = ccode.n
