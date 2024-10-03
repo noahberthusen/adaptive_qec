@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
 import seaborn as sns
+import os
+
+full_path = os.path.realpath(__file__)
+path, filename = os.path.split(full_path)
 
 def expon_fit(data):
     _, best_lifetime = sp.stats.expon.fit(data, floc=0)
@@ -32,7 +36,7 @@ def get_data(concat, adaptive, qcode):
 
             f_name = f"{qcode}_{concat}_{adaptive}_{phys_error}_{meas_error}.res"
 
-            numbers_array = np.genfromtxt(f_path+f_name, delimiter=",")
+            numbers_array = np.genfromtxt(os.path.join(path, f_path+f_name), delimiter=",")
             cleaned_array = numbers_array[~np.isnan(numbers_array)].astype(int)
             lifetime = expon_fit(cleaned_array)
 
@@ -48,8 +52,10 @@ def annotate_heatmap(ax, data):
 
 
 
-qcode1 = "HGP_C422_400_8.qcode"
-qcode2 = "HGP_400_16.qcode"
+qcode1 = "HGP_C422_900_18.qcode"
+qcode1 = "HGP_C642_600_16.qcode"
+
+qcode2 = "HGP_900_36.qcode"
 qcode3 = "HGP_225_9.qcode"
 
 concat0adaptive0 = get_data(0,0,qcode1)
@@ -65,6 +71,7 @@ im1 = axes[0].imshow(concat0adaptive0, cmap='viridis', origin='lower', vmin=vmin
 im2 = axes[1].imshow(concat1adaptive0, cmap='viridis', origin='lower', vmin=vmin, vmax=vmax)
 im3 = axes[2].imshow(concat1adaptive1, cmap='viridis', origin='lower', vmin=vmin, vmax=vmax)
 
+annotate_heatmap(axes[0], concat0adaptive0)
 annotate_heatmap(axes[1], concat1adaptive0/concat0adaptive0)
 annotate_heatmap(axes[2], concat1adaptive1/concat0adaptive0)
 

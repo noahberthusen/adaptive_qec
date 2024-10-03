@@ -2,7 +2,6 @@ import numpy as np
 from classical_code import *
 from quantum_code import *
 from ldpc import bposd_decoder, bp_decoder
-from result_lifetime import Result, save_new_res
 import string, random, argparse
 from pathlib import Path
 
@@ -12,14 +11,17 @@ def main(args):
     concat = int(args.c)
     adaptive = int(args.a)
     num_shots = int(args.n)
-    qubit_error_rate = float(args.e)
-    meas_error_rate = float(args.m)
+    qubit_error_rate = 0.001 #float(args.e)
+    meas_error_rate = 0.001 # float(args.m)
 
-    res_f_name = f"./results/{Path(qcode_fname).name}_{concat}_{adaptive}_{qubit_error_rate}_{meas_error_rate}.res"
     qcode = read_qcode(qcode_fname)
     concat = 1 if qcode.qedxm and concat else 0
     adaptive = 1 if qcode.qedxm and adaptive and concat else 0
     Hx, Hz, Lx, Lz = qcode.to_numpy()
+
+    # folder = f"{Path(qcode_fname).name.strip('.qcode')}/concat{concat}adaptive{adaptive}/"
+    # res_f_name = f"./results/{folder}/{Path(qcode_fname).name}_{concat}_{adaptive}_{qubit_error_rate}_{meas_error_rate}.res"
+    res_f_name = "lifetime.res"
 
     if (adaptive == 1):
         overlapping_x_generators = np.empty(qcode.qedxm, dtype=object)
@@ -50,30 +52,31 @@ def main(args):
 
     # SHOULD ADD SYNDROME BIT ERRORS TO PCM? e.g. arXiv:2004.11199
     bp_qed_dec = bp_decoder(
-        Hx[:100], # the parity check matrix
+        Hx[:qcode.qedxm],
         error_rate=qubit_error_rate,
-        bp_method="ps",
-        max_iter=100, #pcm.shape[1], #the maximum number of iterations for BP)
-        # ms_scaling_factor=0, #min sum scaling factor. If set to zero the variable scaling factor method is used
+        bp_method="msl",
+        max_iter=100, #pcm.shape[1],
+        ms_scaling_factor=0,
     )
 
-    bp_qed_qec_dec = bposd_decoder(
+    bposd_qed_qec_dec = bposd_decoder(
         Hx,
         error_rate=qubit_error_rate,
-        bp_method="ps",
-        max_iter=100,
-        # ms_scaling_factor=0, #min sum scaling factor. If set to zero the variable scaling factor method is used
-        osd_method="osd0", #the OSD method. Choose from:  1) "osd_e", "osd_cs", "osd0"
-        # osd_order=40 #the osd search depth
+        bp_method="msl",
+        max_iter=Hx.shape[1],
+        ms_scaling_factor=0,
+        osd_method="osd0",
+        # osd_order=40
     )
 
     bposd_qec_dec = bposd_decoder(
         Hx,
         error_rate=qubit_error_rate,
-        bp_method="ps",
-        max_iter=100,
-        osd_method="osd0", #the OSD method. Choose from:  1) "osd_e", "osd_cs", "osd0"
-        # osd_order=40 #the osd search depth
+        bp_method="msl",
+        max_iter=Hx.shape[1],
+        ms_scaling_factor=0,
+        osd_method="osd0",
+        # osd_order=40
     )
 
 
@@ -96,28 +99,27 @@ def main(args):
                 guessed_error = bposd_qec_dec.decode(curr_synd)
             elif (concat == 1):
                 # QED + QEC
-                _ = bp_qed_dec.decode(curr_synd[:100])
+                _ = bp_qed_dec.decode(curr_synd[:qcode.qedxm])
 
                 ######################## # THIS MIGHT NEED TO CHANGE SLIGHTLY, SOFT INFORMATION DECODING
                 # new_channel_probs = np.exp(-bp_qed_dec.log_prob_ratios)
-                # new_channel_probs = new_channel_probs / np.sum(new_channel_probs)
                 new_channel_probs = 1 / (np.exp(bp_qed_dec.log_prob_ratios) + 1)
-                # new_channel_probs = new_channel_probs / np.sum(new_channel_probs)
-                # new_channel_probs[400:] = meas_error_rate
-                bp_qed_qec_dec.update_channel_probs(new_channel_probs)
+                new_channel_probs = new_channel_probs / np.sum(new_channel_probs)
+                bposd_qed_qec_dec.update_channel_probs(new_channel_probs)
                 ########################
 
                 updated_synd = curr_synd.copy()
                 if (adaptive == 1):
-                    updated_synd[get_overlapping(curr_synd[:100], True, True)] = 0
+                    updated_synd[get_overlapping(curr_synd[:qcode.qedxm], True, True)] = 0
 
-                guessed_error = bp_qed_qec_dec.decode(updated_synd)
+                guessed_error = bposd_qed_qec_dec.decode(updated_synd)
 
 
             residual_error = curr_qubit_error ^ guessed_error
-            obs = [np.count_nonzero(residual_error[l]) % 2 for l in qcode.Lz]
+            ideal_correction = bposd_qec_dec.decode((Hx @ residual_error) % 2)
 
-            # according to arXiv:2311.03307, you should decode perfectly at this point to see if there's a logical error
+            obs = [np.count_nonzero((ideal_correction ^ residual_error)[l]) % 2 for l in qcode.Lz]
+            #obs = [np.count_nonzero(residual_error[l]) % 2 for l in qcode.Lz]
 
             if np.any(obs):
                 break
@@ -125,7 +127,7 @@ def main(args):
         # res = Result(concat, adaptive, qcode.n, qcode.k, qubit_error_rate, meas_error_rate, 1, num_rounds, 0)
         rs.append(num_rounds)
 
-        if (ii%100==0):
+        if (ii%10==0):
             # save_new_res('./tmp.res', rs)
             with open(res_f_name, '+a') as f:
                 f.write(",".join(map(str, rs)))
@@ -136,12 +138,12 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-q', default="./codes/qcodes/HGP_C422_400_8.qcode", help="Code to simulate")
-    parser.add_argument('-c', default=1, help="Concatenated decoding?")
-    parser.add_argument('-a', default=1, help="QED+QEC protocol?")
+    parser.add_argument('-q', default="./codes/qcodes/HGP_C642_600_16.qcode", help="Code to simulate")
+    parser.add_argument('-c', default=0, help="Concatenated decoding?")
+    parser.add_argument('-a', default=0, help="QED+QEC protocol?")
     parser.add_argument('-n', default=1e3, help="Number of shots")
-    parser.add_argument('-e', default=5e-4, help="Qubit error rate")
-    parser.add_argument('-m', default=5e-4, help="Measurement error rate")
+    parser.add_argument('-e', default=0.001, help="Qubit error rate")
+    parser.add_argument('-m', default=0.001, help="Measurement error rate")
 
     args = parser.parse_args()
 
