@@ -5,7 +5,7 @@ import os
 full_path = os.path.realpath(__file__)
 path, filename = os.path.split(full_path)
 
-n = 12
+n = 16
 dv = 3 # w_c. Every bit is in this many checks
 dc = 4 # w_r. Every check has this many bits in it
 m = (n*dv)//dc
@@ -28,8 +28,6 @@ while (vs.size and cs.size):
             H[cs[c_ind]][vs[v_ind]] = 1
             vs = np.delete(vs, v_ind)
             cs =np.delete(cs, c_ind)
-
-# H = np.loadtxt('./ldpc_codes/16_4_3.txt', dtype=np.int8)
 
 f_name = os.path.join(path, f'./codes/ccodes/{n}_{m}_{dv}_{dc}.code')
 

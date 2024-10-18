@@ -18,14 +18,6 @@ class ClassicalCode:
         self.dv = dv
         self.dc = dc
 
-    def to_numpy(self):
-        H = np.zeros((self.m, self.n), dtype=int)
-        for i in range(self.m):
-            for j in range(self.n):
-                if (j in self.check_nbhd[i]):
-                    H[i][j] = 1
-        return H
-
 
 def read_code(f_name: str):
     """
