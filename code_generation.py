@@ -1,11 +1,12 @@
 from classical_code import *
+from quantum_code import *
 import numpy as np
 import os
 
 full_path = os.path.realpath(__file__)
 path, filename = os.path.split(full_path)
 
-n = 16
+n = 8
 dv = 3 # w_c. Every bit is in this many checks
 dc = 4 # w_r. Every check has this many bits in it
 m = (n*dv)//dc
@@ -42,4 +43,6 @@ for check in range(m):
     check_nbhd.append(bits)
 
 ccode = ClassicalCode(n, m, dv, dc, bit_nbhd, check_nbhd)
+
+hgp(ccode, "./codes/qcodes/")
 write_code(f_name, ccode)

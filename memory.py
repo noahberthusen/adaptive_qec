@@ -141,12 +141,12 @@ if __name__ == "__main__":
     # parser.add_argument('-q', default="./codes/qcodes/HGP_400_16.qcode", help="Code to simulate")
     # parser.add_argument('-q', default="./codes/qcodes/HGP_100_4.qcode", help="Code to simulate")
 
-    parser.add_argument('-c', default=0, help="Concatenated decoding?")
-    parser.add_argument('-a', default=1, help="QED+QEC protocol?")
+    parser.add_argument('-c', default=1, help="Concatenated decoding?")
+    parser.add_argument('-a', default=0, help="QED+QEC protocol?")
     parser.add_argument('-n', default=1e5, help="Number of shots")
-    parser.add_argument('-e', default=1e-2, help="Qubit error rate")
-    parser.add_argument('-m', default=1e-2, help="Measurement error rate")
-    parser.add_argument('-r', default=3, help="Number of rounds")
+    parser.add_argument('-e', default=0.03, help="Qubit error rate")
+    parser.add_argument('-m', default=0, help="Measurement error rate")
+    parser.add_argument('-r', default=1, help="Number of rounds")
 
     args = parser.parse_args()
 
