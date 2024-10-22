@@ -11,6 +11,7 @@ from result_memory import save_new_res, Result
 from ldpc import bposd_decoder, bp_decoder
 import argparse
 from pathlib import Path
+from filelock import Timeout, FileLock
 
 
 def main(args):
@@ -21,7 +22,7 @@ def main(args):
     qubit_error_rate = float(args.e)
     meas_error_rate = float(args.m)
     num_rounds = int(args.r)
-    stab_type = False
+    stab_type = True
 
     qcode = read_qcode(qcode_fname)
     concat = 1 if qcode.qedxm and concat else 0
@@ -29,7 +30,8 @@ def main(args):
     Hx, Hz, Lx, Lz = qcode.to_numpy()
 
     res_f_name = f"./results/{Path(qcode_fname).name}.res"
-
+    res_f_name_lock = f"./results/locks/{Path(qcode_fname).name}.res.lock"
+    lock = FileLock(res_f_name_lock, timeout=10)
 
 
     overlapping_x_generators = np.empty(qcode.qedxm, dtype=object)
@@ -153,10 +155,10 @@ def main(args):
                 self.x_syndrome_history[0] = self.s.current_measurement_record()[1:]
 
 
-        def detectors(self, stab_type):
+        def detectors(self):
             num_meas = self.c.num_measurements
-            prev_meas = self.prev_meas_x if stab_type else self.prev_meas_z
-            curr_meas = self.curr_meas_x if stab_type else self.curr_meas_z
+            prev_meas = self.prev_meas_x if self.stab_type else self.prev_meas_z
+            curr_meas = self.curr_meas_x if self.stab_type else self.curr_meas_z
 
             for i, check in enumerate(np.arange(cmz)):
                 if not prev_meas[i]:
@@ -167,26 +169,25 @@ def main(args):
                     prev_meas[i] = curr_meas[i]
                     curr_meas[i] = 0
 
-            if stab_type:
+            if self.stab_type:
                 self.prev_meas_x = prev_meas
                 self.curr_meas_x = curr_meas
             else:
                 self.prev_meas_z = prev_meas
                 self.curr_meas_z = curr_meas
 
-        def final_detectors_and_observables(self, stab_type):
+        def final_detectors_and_observables(self):
             c = stim.Circuit()
 
-            if self.stab_type: self.c.append("H", [qbt for qbt in data_qbts])
+            if self.stab_type: self.c.append("H", data_qbts)
             c.append("M", data_qbts)
 
-            self.c += c
             self.s.do_circuit(c)
 
             meas = self.s.current_measurement_record()
             num_meas = self.c.num_measurements + c.num_measurements
-            H = Hx if stab_type else Hz
-            prev_meas = self.prev_meas_x if stab_type else self.prev_meas_z
+            H = Hx if self.stab_type else Hz
+            prev_meas = self.prev_meas_x if self.stab_type else self.prev_meas_z
             for i in range(H.shape[0]):
                 incl_qbts = np.where(H[i])[0]
                 incl_qbts = [j-cn for j in incl_qbts]
@@ -201,7 +202,7 @@ def main(args):
                 else:
                     self.z_syndrome_history[-1][i] = np.sum(np.take(meas, incl_qbts)) % 2
 
-            for i, logical in enumerate(Lx if stab_type else Lz):
+            for i, logical in enumerate(Lx if self.stab_type else Lz):
                 incl_qbts = np.where(logical)[0]
                 incl_qbts = [j-cn for j in incl_qbts]
                 c.append("OBSERVABLE_INCLUDE", [stim.target_rec(j) for j in incl_qbts], i)
@@ -219,6 +220,7 @@ def main(args):
                 for i, z_check in enumerate(np.arange(qcode.qedzm)):
                     c.append("MR", z_checks[z_check])
                     self.curr_meas_z[z_check] = self.c.num_measurements + c.num_measurements
+                c.append("X_ERROR", [z_checks[z_check] for z_check in np.arange(qcode.qedzm)], meas_error_rate)
                 return c
 
             def measure_x_qed_checks(c):
@@ -227,6 +229,7 @@ def main(args):
                 for i, x_check in enumerate(np.arange(qcode.qedxm)):
                     c.append("MR", x_checks[x_check])
                     self.curr_meas_x[x_check] = self.c.num_measurements + c.num_measurements
+                c.append("X_ERROR", [x_checks[x_check] for x_check in np.arange(qcode.qedxm)], meas_error_rate)
                 return c
 
             c = stim.Circuit()
@@ -245,6 +248,7 @@ def main(args):
                 for i, z_check in enumerate(curr_z_checks):
                     c.append("MR", z_checks[z_check])
                     self.curr_meas_z[z_check] = self.c.num_measurements + c.num_measurements
+                c.append("X_ERROR", [z_checks[z_check] for z_check in curr_z_checks], meas_error_rate)
                 return c
 
             def measure_x_qec_checks(c, curr_x_checks):
@@ -253,6 +257,7 @@ def main(args):
                 for i, x_check in enumerate(curr_x_checks):
                     c.append("MR", x_checks[x_check])
                     self.curr_meas_x[x_check] = self.c.num_measurements + c.num_measurements
+                c.append("X_ERROR", [x_checks[x_check] for x_check in curr_x_checks], meas_error_rate)
                 return c
 
             c = stim.Circuit()
@@ -328,11 +333,10 @@ def main(args):
                     if len(self.curr_x_checks):
                         self.x_syndrome_history[self.curr_round][self.curr_x_checks] = meas[lookback(self.curr_x_checks):]
 
-                self.detectors(self.stab_type)
+                self.detectors()
                 self.curr_round += 1
 
-            obs_circuit = self.final_detectors_and_observables(self.stab_type)
-            self.s.do_circuit(obs_circuit)
+            obs_circuit = self.final_detectors_and_observables()
             self.c += obs_circuit
 
 
@@ -373,13 +377,16 @@ def main(args):
             guessed_errors = bposd_dec.decode(detection_events)
             guessed_obs = (lcm @ guessed_errors) % 2
             success = np.all(observable_flips.astype(int) == guessed_obs)
-            num_gens = np.count_nonzero(s.z_check_history[1:]) / num_rounds
+
+            check_history = s.x_check_history[1:] if stab_type else s.z_check_history[1:]
+            num_gens = np.count_nonzero(check_history) / num_rounds
 
             res = Result(concat, adaptive, qcode.n, qcode.k, num_rounds, qubit_error_rate, meas_error_rate, num_gens, 1, int(success))
             rs.append(res)
 
             if (ii % 100 == 0):
-                save_new_res(res_f_name, rs)
+                with lock:
+                    save_new_res(res_f_name, rs)
                 rs = []
 
     else:
@@ -421,20 +428,21 @@ def main(args):
             rs.append(res)
 
             if (ii % 100 == 0):
-                save_new_res(res_f_name, rs)
+                with lock:
+                    save_new_res(res_f_name, rs)
                 rs = []
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # parser.add_argument('-q', default="./codes/qcodes/BB_72_12.qcode", help="Code to simulate")
-    parser.add_argument('-q', default="./codes/qcodes/BB_C422_144_12.qcode", help="Code to simulate")
+    parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_C422_200_4.qcode", help="Code to simulate")
 
     parser.add_argument('-c', default=0, help="Concatenated decoding?")
     parser.add_argument('-a', default=1, help="QED+QEC protocol?")
     parser.add_argument('-n', default=1e4, help="Number of shots")
-    parser.add_argument('-e', default=0.003, help="Qubit error rate")
-    parser.add_argument('-m', default=0.003, help="Measurement error rate")
+    parser.add_argument('-e', default=0.001, help="Qubit error rate")
+    parser.add_argument('-m', default=0.001, help="Measurement error rate")
     parser.add_argument('-r', default=10, help="Number of rounds")
 
     args = parser.parse_args()
