@@ -1,12 +1,12 @@
 import os.path
 
-column_names_for_simulation = "concat,adapt,n,k,r,p_phys,p_meas,no_test,no_success,p_log"
+column_names_for_simulation = "concat,adapt,n,k,r,p_phys,p_meas,num_gens,num_test,num_success,p_log"
 first_line = column_names_for_simulation + '\n'
 
 class Result:
-    def __init__(self,concat,adapt,n,k,r,p_phys,p_meas,no_test,no_success):
-        if not (type(concat) == int or type(adapt) == int or type(n) == int or type(k) == int or type(r) == int or type(no_test) == int or\
-                type(p_phys) == float or type(p_meas) == float or type(no_success) == int):
+    def __init__(self,concat,adapt,n,k,r,p_phys,p_meas,num_gens,num_test,num_success):
+        if not (type(concat) == int or type(adapt) == int or type(n) == int or type(k) == int or type(r) == int or type(num_test) == int or\
+                type(p_phys) == float or type(p_meas) == float or type(num_success) == int or type(num_gens) == float):
             raise NameError('Bad result format')
         self.concat = concat
         self.adapt = adapt
@@ -15,19 +15,20 @@ class Result:
         self.r = r
         self.p_phys = p_phys
         self.p_meas = p_meas
-        self.no_test = no_test
-        self.no_success = no_success
+        self.num_gens = num_gens
+        self.num_test = num_test
+        self.num_success = num_success
 
 def res_to_line(r):
-    p_log = r.no_success / r.no_test
+    p_log = r.num_success / r.num_test
     line = str(r.concat) + ',' + str(r.adapt) + ',' + str(r.n) + ',' + str(r.k) + ',' + str(r.r) + ',' +\
-           str(r.p_phys) + ',' + str(r.p_meas) + ',' + str(r.no_test) + ',' + str(r.no_success) + ',' + str(p_log) + '\n'
+           str(r.p_phys) + ',' + str(r.p_meas) + ',' + str(r.num_gens) + ',' + str(r.num_test) + ',' + str(r.num_success) + ',' + str(p_log) + '\n'
     return line
 
 def line_to_res(line):
     tmp = line.strip('\n').split(',')
     r = Result(int(tmp[0]),int(tmp[1]),int(tmp[2]),int(tmp[3]),int(tmp[4]),
-               float(tmp[5]),float(tmp[6]),int(tmp[7]),int(tmp[8]))
+               float(tmp[5]),float(tmp[6]),float(tmp[7]),int(tmp[8]),int(tmp[9]))
     return r
 
 # Creates a file whose lines are stored in lines_list
@@ -45,10 +46,11 @@ def create_file(file_name, lines_list):
 def combine_res(r1,r2):
     if (r1.concat == r2.concat and r1.adapt == r2.adapt and r1.n == r2.n and r1.k == r2.k and r1.r == r2.r and \
         r1.p_phys == r2.p_phys and r1.p_meas == r2.p_meas):
-        no_test = r1.no_test + r2.no_test
-        no_success = r1.no_success + r2.no_success
+        num_test = r1.num_test + r2.num_test
+        num_gens = r1.num_gens + ((r2.num_gens - r1.num_gens) / num_test)
+        num_success = r1.num_success + r2.num_success
         return Result(r1.concat,r1.adapt,r1.n,r1.k,r1.r,
-                      r1.p_phys,r1.p_meas,no_test,no_success)
+                      r1.p_phys,r1.p_meas,num_gens,num_test,num_success)
     return None
 
 
