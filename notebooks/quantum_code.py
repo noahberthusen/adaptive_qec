@@ -177,10 +177,10 @@ def concatenate_iceberg(qcode: QuantumCode, ibn, fpath):
     icebergX = np.ones(ibn, dtype=int)
     # icebergZ = np.ones(ibn, dtype=int)
 
-    if (ibn == 6):
-        icebergXlogicals, icebergZlogicals = iceberg642Xlogicals, iceberg642Zlogicals
-    else:
-        icebergXlogicals, icebergZlogicals = iceberglogicals(ibn)
+    # if (ibn == 6):
+    #     icebergXlogicals, icebergZlogicals = iceberg642Xlogicals, iceberg642Zlogicals
+    # else:
+    icebergXlogicals, icebergZlogicals = iceberglogicals(ibn)
 
     Hx, Hz, Lx, Lz = qcode.to_numpy()
     concatenatedStabilizersQED = np.kron(np.eye(Hx.shape[1]//ibk, dtype=int), icebergX) # ibk | Hx.shape[1] required
