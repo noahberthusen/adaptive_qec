@@ -6,9 +6,9 @@ import os
 full_path = os.path.realpath(__file__)
 path, filename = os.path.split(full_path)
 
-n = 8
-dv = 3 # w_c. Every bit is in this many checks
-dc = 4 # w_r. Every check has this many bits in it
+n = 6
+dv = 2 # w_c. Every bit is in this many checks
+dc = 3 # w_r. Every check has this many bits in it
 m = (n*dv)//dc
 k = n - m
 
@@ -44,5 +44,5 @@ for check in range(m):
 
 ccode = ClassicalCode(n, m, dv, dc, bit_nbhd, check_nbhd)
 
-hgp(ccode, "./codes/qcodes/")
+# hgp(ccode, "./codes/qcodes/")
 write_code(f_name, ccode)

@@ -1,9 +1,8 @@
 import numpy as np
-from bposd.css import css_code
 from classical_code import *
 
 class QuantumCode:
-    def __init__(self, n, k, xm, zm, qedxm, qedzm, Hx, Hz, Lx, Lz):
+    def __init__(self, n, k, xm, zm, qedxm, qedzm, Hx, Hz, Lx, Lz, mapping):
         self.n = n
         self.k = k
         self.xm = xm
@@ -14,6 +13,7 @@ class QuantumCode:
         self.Hz = Hz
         self.Lx = Lx
         self.Lz = Lz
+        self.mapping = mapping
 
     def to_numpy(self):
         Hx = np.zeros(shape=(self.xm, self.n), dtype=int)
@@ -32,9 +32,12 @@ class QuantumCode:
         for i, zlog in enumerate(self.Lz):
             for qbt in zlog:
                 Lz[i][qbt] = 1
+        mapping = np.zeros(shape=(self.qedxm, 2), dtype=int)
+        for i, pair in enumerate(self.mapping):
+            mapping[i][0] = pair[0]
+            mapping[i][1] = pair[1]
 
-        return Hx, Hz, Lx, Lz
-
+        return Hx, Hz, Lx, Lz, mapping
 
 def read_qcode(f_name):
     with open(f_name, 'r') as f:
@@ -66,8 +69,13 @@ def read_qcode(f_name):
         for i in range(k):
             supp = [int(c) for c in f.readline().strip(',\n').split(',')]
             Lz.append(supp)
+        f.readline()
+        mapping = []
+        for i in range(qedxm):
+            pair = [int(c) for c in f.readline().strip(',\n').split(',')]
+            mapping.append(pair)
 
-    return QuantumCode(n, k, xm, zm, qedxm, qedzm, Hx, Hz, Lx, Lz)
+    return QuantumCode(n, k, xm, zm, qedxm, qedzm, Hx, Hz, Lx, Lz, mapping)
 
 
 def write_qcode(f_name, qcode: QuantumCode):
@@ -104,47 +112,51 @@ def write_qcode(f_name, qcode: QuantumCode):
                 f.write(str(qbt))
                 f.write(',')
             f.write('\n')
+        f.write(f'Mapping\n')
+        for pair in qcode.mapping:
+            f.write(f"{pair[0]},{pair[1]},")
+            f.write('\n')
 
 
-def format_qcode(Hx, Hz):
-    Hx_inds = [np.where(Hx[i])[0] for i in range(Hx.shape[0])]
-    Hz_inds = [np.where(Hz[i])[0] for i in range(Hz.shape[0])]
+# def format_qcode(Hx, Hz):
+#     Hx_inds = [np.where(Hx[i])[0] for i in range(Hx.shape[0])]
+#     Hz_inds = [np.where(Hz[i])[0] for i in range(Hz.shape[0])]
 
-    qcode = css_code(Hx, Hz)
-    xL, zL = qcode.compute_logicals()
-    k = xL.shape[0]
+#     qcode = css_code(Hx, Hz)
+#     xL, zL = qcode.compute_logicals()
+#     k = xL.shape[0]
 
-    xL_inds = [np.where(x)[0] for x in xL]
-    zL_inds = [np.where(z)[0] for z in zL]
+#     xL_inds = [np.where(x)[0] for x in xL]
+#     zL_inds = [np.where(z)[0] for z in zL]
 
-    return k, Hx_inds, Hz_inds, xL_inds, zL_inds
+#     return k, Hx_inds, Hz_inds, xL_inds, zL_inds
 
 
-def hgp(ccode: ClassicalCode, fpath):
-    H = ccode.to_numpy()
-    dim0, dim1 = H.shape
+# def hgp(ccode: ClassicalCode, fpath):
+#     H = ccode.to_numpy()
+#     dim0, dim1 = H.shape
 
-    I1 = np.eye(dim1, dtype=int)
-    I0 = np.eye(dim0, dtype=int)
+#     I1 = np.eye(dim1, dtype=int)
+#     I0 = np.eye(dim0, dtype=int)
 
-    hx1 = np.kron(H, I1)
-    hx2 = np.kron(I0, H.T)
-    HGPHx = np.hstack([hx1, hx2])
+#     hx1 = np.kron(H, I1)
+#     hx2 = np.kron(I0, H.T)
+#     HGPHx = np.hstack([hx1, hx2])
 
-    hz1 = np.kron(I1, H)
-    hz2 = np.kron(H.T, I0)
-    HGPHz = np.hstack([hz1, hz2])
+#     hz1 = np.kron(I1, H)
+#     hz2 = np.kron(H.T, I0)
+#     HGPHz = np.hstack([hz1, hz2])
 
-    m, n = HGPHx.shape
-    Hx_inds = [np.where(HGPHx[i])[0] for i in range(HGPHx.shape[0])]
-    Hz_inds = [np.where(HGPHz[i])[0] for i in range(HGPHz.shape[0])]
+#     m, n = HGPHx.shape
+#     Hx_inds = [np.where(HGPHx[i])[0] for i in range(HGPHx.shape[0])]
+#     Hz_inds = [np.where(HGPHz[i])[0] for i in range(HGPHz.shape[0])]
 
-    k, Hx_inds, Hz_inds, xL_inds, zL_inds = format_qcode(HGPHx, HGPHz)
+#     k, Hx_inds, Hz_inds, xL_inds, zL_inds = format_qcode(HGPHx, HGPHz)
 
-    qcode = QuantumCode(n, k, HGPHx.shape[0], HGPHx.shape[0],
-                        0, 0,
-                        Hx_inds, Hz_inds, xL_inds, zL_inds)
-    write_qcode(fpath+ f"/HGP_{n}_{k}.qcode", qcode)
+#     qcode = QuantumCode(n, k, HGPHx.shape[0], HGPHx.shape[0],
+#                         0, 0,
+#                         Hx_inds, Hz_inds, xL_inds, zL_inds)
+#     write_qcode(fpath+ f"/HGP_{n}_{k}.qcode", qcode)
 
 
 def concatenate_iceberg(qcode: QuantumCode, ibn, fpath):
@@ -223,6 +235,58 @@ def concatenate_iceberg(qcode: QuantumCode, ibn, fpath):
                         concatenatedStabilizersQED.shape[0], concatenatedStabilizersQED.shape[0],
                         Hx_inds, Hz_inds, xL_inds, zL_inds)
     write_qcode(fpath + f"/HGP_C{ibn}{ibk}2_{n}_{k}.qcode", qcode)
+
+
+def concatenate_steane(qcode: QuantumCode, fpath):
+    H = np.array([
+        [1,0,1,0,1,0,1],
+        [0,1,1,0,0,1,1],
+        [0,0,0,1,1,1,1]
+    ])
+    xL = zL = np.array([1,0,0,0,0,1,1])
+    # xL = zL = np.array([1,1,1,1,1,1,1])
+
+    Hx, Hz, Lx, Lz = qcode.to_numpy()
+    concatenatedStabilizersQED = np.kron(np.eye(Hx.shape[1], dtype=int), H)
+
+    concatenatedStabilizersXQEC = np.zeros(shape=(Hx.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
+    concatenatedStabilizersZQEC = np.zeros(shape=(Hz.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
+
+    for i, r in enumerate(Hx):
+        for x in np.where(r)[0]:
+            concatenatedStabilizersXQEC[i][H.shape[1]*x:H.shape[1]*(x+1)] = xL
+
+    for i, r in enumerate(Hz):
+        for z in np.where(r)[0]:
+            concatenatedStabilizersZQEC[i][H.shape[1]*z:H.shape[1]*(z+1)] = zL
+
+    concatenatedHx = np.vstack([concatenatedStabilizersXQEC, concatenatedStabilizersQED][::-1])
+    concatenatedHz = np.vstack([concatenatedStabilizersZQEC, concatenatedStabilizersQED][::-1])
+
+    concatenatedxL = np.zeros(shape=(Lx.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
+    concatenatedzL = np.zeros(shape=(Lz.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
+
+    for i, r in enumerate(Lx):
+        for x in np.where(r)[0]:
+            concatenatedxL[i][H.shape[1]*x:H.shape[1]*(x+1)] = xL
+
+    for i, r in enumerate(Lz):
+        for z in np.where(r)[0]:
+            concatenatedzL[i][H.shape[1]*z:H.shape[1]*(z+1)] = zL
+
+    xL_inds = [np.where(x)[0] for x in concatenatedxL]
+    zL_inds = [np.where(z)[0] for z in concatenatedzL]
+
+    m, n = concatenatedHx.shape
+    k = len(xL_inds)
+
+    Hx_inds = [np.where(concatenatedHx[i])[0] for i in range(concatenatedHx.shape[0])]
+    Hz_inds = [np.where(concatenatedHz[i])[0] for i in range(concatenatedHz.shape[0])]
+
+    qcode = QuantumCode(n, k, concatenatedHx.shape[0], concatenatedHz.shape[0],
+                        concatenatedStabilizersQED.shape[0], concatenatedStabilizersQED.shape[0],
+                        Hx_inds, Hz_inds, xL_inds, zL_inds)
+    write_qcode(fpath + f"/HGP_STEANE_{n}_{k}.qcode", qcode)
 
 
 def concatenate_iceberg2(qcode: QuantumCode, ibn, fpath):

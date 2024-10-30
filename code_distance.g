@@ -13,10 +13,8 @@ lisX:=ReadMTXE(Filename(filedir, qx_filename), 0);;
 lisZ:=ReadMTXE(Filename(filedir, qz_filename), 0);;
 GX:=lisX[3];;
 GZ:=lisZ[3];;
-dz := DistRandCSS(GX,GZ,10000,0,0);;
+dz := DistRandCSS(GX,GZ,1000,0,0);;
+dx := DistRandCSS(GZ,GX,1000,0,0);;
 
-# PrintTo(output, i);
-# PrintTo(output, ",");
-# PrintTo(output, dz);
-# PrintTo(output, "\n");
+Print(dx);
 Print(dz);
