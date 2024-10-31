@@ -18,7 +18,7 @@ def main(args):
     qcode = read_qcode(qcode_fname)
     concat = 1 if qcode.qedxm and concat else 0
     adaptive = 1 if qcode.qedxm and adaptive else 0
-    Hx, Hz, Lx, Lz = qcode.to_numpy()
+    Hx, Hz, Lx, Lz, mapping = qcode.to_numpy()
 
     res_f_name = f"./results/{Path(qcode_fname).name}.res"
 
@@ -54,7 +54,7 @@ def main(args):
         bp_qed_dec = bp_decoder(
             Hx[:qcode.qedxm],
             error_rate=qubit_error_rate,
-            bp_method="msl",
+            bp_method="ms",
             max_iter=100, #pcm.shape[1],
             ms_scaling_factor=0,
         )
@@ -62,9 +62,9 @@ def main(args):
     bposd_qed_qec_dec = bposd_decoder(
         Hx[qcode.qedxm:],
         error_rate=qubit_error_rate,
-        bp_method="msl",
+        bp_method="ms",
         max_iter=Hx.shape[1],
-        ms_scaling_factor=0,
+        # ms_scaling_factor=0,
         osd_method="osd0",
         # osd_order=40
     )
@@ -72,9 +72,9 @@ def main(args):
     bposd_qec_dec = bposd_decoder(
         Hx[qcode.qedxm:],
         error_rate=qubit_error_rate,
-        bp_method="msl",
+        bp_method="ms",
         max_iter=Hx.shape[1],
-        ms_scaling_factor=0,
+        # ms_scaling_factor=0,
         osd_method="osd0",
         # osd_order=40
     )
@@ -127,7 +127,7 @@ def main(args):
 
         obs = (Lx @ curr_qubit_error) % 2
         success = not np.any(obs) # and not np.any(curr_synd)
-        res = Result(concat, adaptive, qcode.n, qcode.k, num_rounds, qubit_error_rate, meas_error_rate, 1, int(success))
+        res = Result(concat, adaptive, qcode.n, qcode.k, num_rounds, qubit_error_rate, meas_error_rate, 0, 1, int(success))
         rs.append(res)
 
         if (ii%1000==0):
@@ -137,15 +137,15 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-q', default="./codes/qcodes/HGP_C642_150_4.qcode", help="Code to simulate")
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_400_16.qcode", help="Code to simulate")
+    # parser.add_argument('-q', default="./codes/qcodes/HGP_C642_150_4.qcode", help="Code to simulate")
+    parser.add_argument('-q', default="./codes/qcodes/HGP_400_16/HGP_400_16.qcode", help="Code to simulate")
     # parser.add_argument('-q', default="./codes/qcodes/HGP_100_4.qcode", help="Code to simulate")
 
     parser.add_argument('-c', default=1, help="Concatenated decoding?")
     parser.add_argument('-a', default=0, help="QED+QEC protocol?")
     parser.add_argument('-n', default=1e5, help="Number of shots")
-    parser.add_argument('-e', default=0.03, help="Qubit error rate")
-    parser.add_argument('-m', default=0, help="Measurement error rate")
+    parser.add_argument('-e', default=0.01, help="Qubit error rate")
+    parser.add_argument('-m', default=0.01, help="Measurement error rate")
     parser.add_argument('-r', default=1, help="Number of rounds")
 
     args = parser.parse_args()
