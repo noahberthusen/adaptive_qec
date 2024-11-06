@@ -74,5 +74,14 @@ for i, code in enumerate(codes2):
     ax[0].set_title('HGP codes')
     ax[0].legend()
 
+
+ax[0].axvspan(0.02, 0.025, color='gray', alpha=0.3)
+ax[1].axvspan(0.02, 0.025, color='gray', alpha=0.3)
+
+
+ax[0].set_ylabel(r"Logical error rate, $p_{\log}$")
+ax[1].set_xlabel(r"Error rate, $p$")
+ax[0].set_xlabel(r"Error rate, $p$")
+
 # plt.show()
 plt.savefig(os.path.join(path, "../memory_phenom.png"), dpi=600, bbox_inches="tight")

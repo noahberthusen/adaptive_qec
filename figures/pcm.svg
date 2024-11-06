@@ -23,9 +23,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="2.8400393"
-     inkscape:cx="548.23185"
-     inkscape:cy="383.97356"
+     inkscape:zoom="1.0041055"
+     inkscape:cx="377.45037"
+     inkscape:cy="297.27951"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
      inkscape:window-x="-8"
@@ -56,7 +56,7 @@
        d="M 43.214251,82.080722 H 163.63444"
        id="path2" />
     <rect
-       style="opacity:0.292;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583"
+       style="opacity:1;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583;fill-opacity:0.27000001"
        id="rect4"
        width="119.89319"
        height="42.160244"
@@ -65,7 +65,7 @@
        rx="9.5"
        ry="9.5" />
     <rect
-       style="opacity:0.3;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583"
+       style="opacity:1;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583;fill-opacity:0.27000001"
        id="rect5"
        width="16.804647"
        height="3.558877"
@@ -74,7 +74,7 @@
        rx="1.9999999"
        ry="2" />
     <rect
-       style="opacity:0.3;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583"
+       style="opacity:1;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583;fill-opacity:0.27000001"
        id="rect5-8"
        width="16.804647"
        height="3.558877"
@@ -83,7 +83,7 @@
        rx="1.9999999"
        ry="2" />
     <rect
-       style="opacity:0.3;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583"
+       style="opacity:1;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583;fill-opacity:0.27000001"
        id="rect5-0"
        width="16.804647"
        height="3.558877"
@@ -92,7 +92,7 @@
        rx="1.9999999"
        ry="2" />
     <rect
-       style="opacity:0.3;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583"
+       style="opacity:1;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583;fill-opacity:0.27000001"
        id="rect5-5"
        width="16.804647"
        height="3.558877"
@@ -101,7 +101,7 @@
        rx="1.9999999"
        ry="2" />
     <rect
-       style="opacity:0.3;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583"
+       style="opacity:1;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583;fill-opacity:0.27000001"
        id="rect5-6"
        width="16.804647"
        height="3.558877"
@@ -110,7 +110,7 @@
        rx="1.9999999"
        ry="2" />
     <rect
-       style="opacity:0.3;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583"
+       style="opacity:1;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583;fill-opacity:0.27000001"
        id="rect5-4"
        width="16.804647"
        height="3.558877"
@@ -119,7 +119,7 @@
        rx="1.9999999"
        ry="2" />
     <rect
-       style="opacity:0.3;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583"
+       style="opacity:1;fill:#0000ff;fill-rule:evenodd;stroke-width:0.264583;fill-opacity:0.27000001"
        id="rect5-41"
        width="16.804647"
        height="3.558877"
