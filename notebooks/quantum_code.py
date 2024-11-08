@@ -237,57 +237,6 @@ def concatenate_iceberg(qcode: QuantumCode, ibn, fpath):
     write_qcode(fpath + f"/HGP_C{ibn}{ibk}2_{n}_{k}.qcode", qcode)
 
 
-def concatenate_steane(qcode: QuantumCode, fpath):
-    H = np.array([
-        [1,0,1,0,1,0,1],
-        [0,1,1,0,0,1,1],
-        [0,0,0,1,1,1,1]
-    ])
-    xL = zL = np.array([1,0,0,0,0,1,1])
-    # xL = zL = np.array([1,1,1,1,1,1,1])
-
-    Hx, Hz, Lx, Lz = qcode.to_numpy()
-    concatenatedStabilizersQED = np.kron(np.eye(Hx.shape[1], dtype=int), H)
-
-    concatenatedStabilizersXQEC = np.zeros(shape=(Hx.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
-    concatenatedStabilizersZQEC = np.zeros(shape=(Hz.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
-
-    for i, r in enumerate(Hx):
-        for x in np.where(r)[0]:
-            concatenatedStabilizersXQEC[i][H.shape[1]*x:H.shape[1]*(x+1)] = xL
-
-    for i, r in enumerate(Hz):
-        for z in np.where(r)[0]:
-            concatenatedStabilizersZQEC[i][H.shape[1]*z:H.shape[1]*(z+1)] = zL
-
-    concatenatedHx = np.vstack([concatenatedStabilizersXQEC, concatenatedStabilizersQED][::-1])
-    concatenatedHz = np.vstack([concatenatedStabilizersZQEC, concatenatedStabilizersQED][::-1])
-
-    concatenatedxL = np.zeros(shape=(Lx.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
-    concatenatedzL = np.zeros(shape=(Lz.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
-
-    for i, r in enumerate(Lx):
-        for x in np.where(r)[0]:
-            concatenatedxL[i][H.shape[1]*x:H.shape[1]*(x+1)] = xL
-
-    for i, r in enumerate(Lz):
-        for z in np.where(r)[0]:
-            concatenatedzL[i][H.shape[1]*z:H.shape[1]*(z+1)] = zL
-
-    xL_inds = [np.where(x)[0] for x in concatenatedxL]
-    zL_inds = [np.where(z)[0] for z in concatenatedzL]
-
-    m, n = concatenatedHx.shape
-    k = len(xL_inds)
-
-    Hx_inds = [np.where(concatenatedHx[i])[0] for i in range(concatenatedHx.shape[0])]
-    Hz_inds = [np.where(concatenatedHz[i])[0] for i in range(concatenatedHz.shape[0])]
-
-    qcode = QuantumCode(n, k, concatenatedHx.shape[0], concatenatedHz.shape[0],
-                        concatenatedStabilizersQED.shape[0], concatenatedStabilizersQED.shape[0],
-                        Hx_inds, Hz_inds, xL_inds, zL_inds)
-    write_qcode(fpath + f"/HGP_STEANE_{n}_{k}.qcode", qcode)
-
 
 def concatenate_iceberg2(qcode: QuantumCode, ibn, fpath):
     def iceberglogicals(n):
@@ -326,7 +275,7 @@ def concatenate_iceberg2(qcode: QuantumCode, ibn, fpath):
     else:
         icebergXlogicals, icebergZlogicals = iceberglogicals(ibn)
 
-    Hx, Hz, Lx, Lz = qcode.to_numpy()
+    Hx, Hz, Lx, Lz, mapping = qcode.to_numpy()
     concatenatedStabilizersQED = np.kron(np.eye(Hx.shape[1], dtype=int), icebergX)
 
     concatenatedStabilizersXQEC = np.zeros(shape=(ibk*Hx.shape[0], concatenatedStabilizersQED.shape[1]), dtype=int)
@@ -369,6 +318,6 @@ def concatenate_iceberg2(qcode: QuantumCode, ibn, fpath):
 
     qcode = QuantumCode(n, k, concatenatedHx.shape[0], concatenatedHz.shape[0],
                         concatenatedStabilizersQED.shape[0], concatenatedStabilizersQED.shape[0],
-                        Hx_inds, Hz_inds, xL_inds, zL_inds)
+                        Hx_inds, Hz_inds, xL_inds, zL_inds, [])
     write_qcode(fpath + f"/HGP_C{ibn}{ibk}2_{n}_{k}.qcode", qcode)
 
