@@ -38,14 +38,14 @@ def main(args):
     hgp_H = hgp_Hx if stab_type else hgp_Hz
 
     qec_aug_dec_H = np.hstack([hgp_H, np.eye(hgp_H.shape[0], dtype=int)])
-    qec_aug_channel_probs = [qubit_error_rate]*hgp_H.shape[1] + [meas_error_rate]*(hgp_H.shape[0])
+    qec_aug_channel_probs = [0.01]*hgp_H.shape[1] + [0.01]*(hgp_H.shape[0])
 
     qec_dec_H = hgp_H
     qec_channel_probs = [qubit_error_rate]*hgp_H.shape[1]
     L = Lx if stab_type else Lz
 
 
-    res_f_name = f"./results/{Path(qcode_fname).name}_laptop.res"
+    res_f_name = f"./results/{Path(qcode_fname).name}.res"
     res_f_name_lock = f"./results/locks/{Path(qcode_fname).name}.res.lock"
     lock = FileLock(res_f_name_lock, timeout=10)
 
@@ -129,10 +129,10 @@ def main(args):
 
             #######################
             if soft:
-                new_channel_probs = qubit_error_rate**2 * np.ones(hgp_H.shape[1])
-                new_channel_probs[mapping[curr_qed_synd == 1].flatten()] = 0.5
+                new_channel_probs = 0.01 * np.ones(hgp_H.shape[1])
+                new_channel_probs[mapping[curr_qed_synd == 1].flatten()] = 0.25
                 if augment:
-                    new_channel_probs = np.concatenate([new_channel_probs, [meas_error_rate]*hgp_H.shape[0]])
+                    new_channel_probs = np.concatenate([new_channel_probs, [0.01]*hgp_H.shape[0]])
                     qec_aug_dec.update_channel_probs(new_channel_probs)
                 else:
                     qec_dec.update_channel_probs(new_channel_probs)
@@ -175,7 +175,7 @@ def main(args):
         res = Result(concat, adapt, soft, qcode.n, qcode.k, num_rounds, qubit_error_rate, meas_error_rate, 0, 1, int(success))
         rs.append(res)
 
-        if (ii % 1000 == 0):
+        if (ii % 10 == 0):
             with lock:
                 save_new_res(res_f_name, rs)
             rs = []
@@ -184,8 +184,10 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_C422_200_4.qcode", help="Code to simulate")
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_400_16/HGP_C422_800_16.qcode", help="Code to simulate")
+    # parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_C422_200_4.qcode", help="Code to simulate")
+
+    parser.add_argument('-q', default="./codes/qcodes/HGP_400_16/HGP_C422_800_16.qcode", help="Code to simulate")
+    # parser.add_argument('-q', default="./codes/qcodes/HGP_900_36/HGP_C422_1800_36.qcode", help="Code to simulate")
 
     # parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_100_4.qcode", help="Code to simulate")
 
@@ -195,8 +197,8 @@ if __name__ == "__main__":
     parser.add_argument('-s', default=1, help="Soft information?")
 
     parser.add_argument('-n', default=1e4, help="Number of shots")
-    parser.add_argument('-e', default=0.01, help="Qubit error rate")
-    parser.add_argument('-m', default=0.01, help="Measurement error rate")
+    parser.add_argument('-e', default=0.02, help="Qubit error rate")
+    parser.add_argument('-m', default=0.02, help="Measurement error rate")
     parser.add_argument('-r', default=10, help="Number of rounds")
 
     args = parser.parse_args()

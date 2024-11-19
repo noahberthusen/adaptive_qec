@@ -4,16 +4,15 @@ import os
 import galois
 
 codes = [
-    "6_4_2_3",
     "8_6_3_4",
-    # "12_9_3_4",
+    "12_9_3_4",
     "16_12_3_4",
     # "20_15_3_4",
     "24_18_3_4",
-    # "28_21_3_4",
-    "32_24_3_4",
-    "40_30_3_4",
-    # "60_45_3_4"
+    # # "28_21_3_4",
+    # "32_24_3_4",
+    # "40_30_3_4",
+    # # "60_45_3_4"
 
 ]
 distances = []
@@ -56,12 +55,14 @@ for i, code in enumerate(codes):
     ccode = read_code(file)
     d = ccode.n
     n = ccode.n
+    m = ccode.m
 
     H = np.zeros((ccode.m, ccode.n), dtype=int)
     for j, row in enumerate(ccode.check_nbhd):
         for r in row:
             H[j][r] = 1
     k = n - np.linalg.matrix_rank(GF(H))
+    kT = m - np.linalg.matrix_rank(GF(H.T))
 
     hx1 = np.kron(H, np.eye(H.shape[1], dtype=bool))
     hx2 = np.kron(np.eye(H.shape[0], dtype=bool), H.T)
@@ -85,6 +86,6 @@ for i, code in enumerate(codes):
     qedn = 4
     qedk = 2
     distances.append(d)
-    print(f"[[{n},{k},{d}]],\t[[{n**2+(n-k)**2},{k**2},{d}]],\t[[{qedn*(n**2+(n-k)**2)},{qedk*(k**2)},{2*d}]]")
+    print(f"[[{n},{k},{d}]],\t[[{n**2+m**2},{k**2+kT**2},{d}]],\t[[{qedn*(n**2+(n-k)**2)},{qedk*(k**2)},{2*d}]]")
 
 # print(distances)
