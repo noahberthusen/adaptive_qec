@@ -123,7 +123,7 @@ for i, code in enumerate(codes):
 
 
 
-ax[0].set_ylabel(r"Logical error rate, $p_{\log}$")
+ax[0].set_ylabel(r"Logical error rate per round, $\epsilon_L$")
 ax[2].set_xlabel(r"Error rate, $p$")
 ax[1].set_xlabel(r"Error rate, $p$")
 ax[0].set_xlabel(r"Error rate, $p$")

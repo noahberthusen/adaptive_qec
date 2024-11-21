@@ -199,6 +199,7 @@ def main(args):
     for x in np.arange(qcode.xm):
         c = stim.Circuit()
         gen_qbts = data_qbts[np.where(Hx[x])[0]]
+        if qcode.qedxm: gen_qbts = np.concatenate([gen_qbts[0::2], gen_qbts[1::2]])
         for qbt in gen_qbts:
             path_qbts = [x_checks[x], qbt]
             c.append("CNOT", path_qbts)
@@ -220,6 +221,7 @@ def main(args):
     for z in np.arange(qcode.zm):
         c = stim.Circuit()
         gen_qbts = data_qbts[np.where(Hz[z])[0]]
+        if qcode.qedxm: gen_qbts = np.concatenate([gen_qbts[0::2], gen_qbts[1::2]])
         for qbt in gen_qbts:
             path_qbts = [qbt, z_checks[z]]
             c.append("CNOT", path_qbts)
@@ -428,6 +430,8 @@ def main(args):
                         self.curr_z_checks = sorted(get_overlapping(z_qed_synd_diff, False))
 
                     if (_ > 1) and ((_ - 1) % np.floor(10 * (0.001/qubit_error_rate)) == 0):
+                    #if (_ > 1) and ((_ - 1) % np.floor(10 * (1e-6/qubit_error_rate**2)) == 0):
+                    #if (_ > 1) and ((_ - 1) % 10 == 0):
                         self.curr_z_checks = np.arange(qcode.qedxm, cmz)
                         self.curr_x_checks = np.arange(qcode.qedxm, cmx)
 
