@@ -12,11 +12,18 @@ path, filename = os.path.split(full_path)
 # plt.rcParams['xtick.direction'] = 'in'
 # plt.rcParams['ytick.direction'] = 'in'
 plt.rcParams['axes.linewidth'] = 1
-folder = "memory_circuit_FT"
+folder = "memory_circuit"
 
 fig, ax = plt.subplots(1, 3, figsize=(12,3), sharey=True)
 
 codes = [
+    "HGP_C422_200_4",
+    "HGP_C422_800_16",
+    # "HGP_C422_1800_36",
+    # "HGP_C422_3200_64",
+]
+
+codes3 = [
     "HGP_C422_200_4",
     "HGP_C422_800_16",
     # "HGP_C422_1800_36",
@@ -54,7 +61,7 @@ ax0_twin.set_yscale('log')
 ax2_twin.get_shared_y_axes().join(ax0_twin, ax1_twin, ax2_twin)
 
 
-for i, code in enumerate(codes):
+for i, code in enumerate(codes3):
     df = pd.read_csv(os.path.join(path, f'../../results/{folder}/nonadaptive/{code}.qcode.res'))
     df['p_error'] = 1 - df['p_log']
     df['p_std_dev'] = np.sqrt(df['p_error'] * df['p_log'] / df['num_test'])
