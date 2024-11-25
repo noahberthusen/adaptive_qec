@@ -139,9 +139,9 @@ def generate_422_circuit(H, x_checks, z_checks, p):
 
 
 if __name__ == "__main__":
-    hgp_qcode = read_qcode("./codes/qcodes/HGP_100_4/HGP_100_4.qcode")
+    hgp_qcode = read_qcode("./codes/qcodes/HGP_52_4/HGP_52_4.qcode")
     qcode = hgp_qcode
-    qcode = read_qcode("./codes/qcodes/HGP_100_4/HGP_C422_200_4.qcode")
+    qcode = read_qcode("./codes/qcodes/HGP_52_4/HGP_C422_104_4.qcode")
 
     hgp_Hx, hgp_Hz, hgp_Lx, hgp_Lz, _ = hgp_qcode.to_numpy()
     Hx, Hz, Lx, Lz, mapping = qcode.to_numpy()
@@ -155,8 +155,10 @@ if __name__ == "__main__":
 
     c = generate_422_circuit(Hx[:qcode.qedxm], x_checks[:qcode.qedxm], z_checks[:qcode.qedxm], 0.001)
 
-    # G = _create_bipartite_graph_from_parity_matrix(Hx[qcode.qedxm:], x_checks[qcode.qedxm:])
+    G = _create_bipartite_graph_from_parity_matrix(Hx[qcode.qedxm:], x_checks[qcode.qedxm:])
+    coloring = edge_color_bipartite(G)
+    print(len(coloring))
     # c = generate_422_hgp_circuit(Hx[qcode.qedxm:], x_checks[qcode.qedxm:], True, 0.001)
 
-    with open("tmp.txt", "w+") as f:
-        f.write(str(c))
+    # with open("tmp.txt", "w+") as f:
+    #     f.write(str(c))

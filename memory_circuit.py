@@ -456,11 +456,11 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_C422_200_4.qcode", help="Code to simulate")
+    # parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_C422_200_4.qcode", help="Code to simulate")
     # parser.add_argument('-q', default="./codes/qcodes/HGP_400_16/HGP_C422_800_16.qcode", help="Code to simulate")
     # parser.add_argument('-q', default="./codes/qcodes/HGP_900_36/HGP_C422_1800_36.qcode", help="Code to simulate")
 
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_100_4.qcode", help="Code to simulate")
+    parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_100_4.qcode", help="Code to simulate")
     # parser.add_argument('-q', default="./codes/qcodes/HGP_400_16/HGP_400_16.qcode", help="Code to simulate")
     # parser.add_argument('-q', default="./codes/qcodes/HGP_900_36/HGP_900_36.qcode", help="Code to simulate")
 
