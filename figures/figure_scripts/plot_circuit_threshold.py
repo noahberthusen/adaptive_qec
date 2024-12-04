@@ -19,7 +19,7 @@ fig, ax = plt.subplots(1, 3, figsize=(12,3), sharey=True)
 codes = [
     "HGP_C422_200_4",
     "HGP_C422_800_16",
-    # "HGP_C422_1800_36",
+    "HGP_C422_1800_36",
     # "HGP_C422_3200_64",
 ]
 
@@ -58,7 +58,14 @@ ax2_twin.set_yscale('log')
 ax1_twin.set_yscale('log')
 ax0_twin.set_yscale('log')
 
-ax2_twin.get_shared_y_axes().join(ax0_twin, ax1_twin, ax2_twin)
+ax0_twin.sharey(ax1_twin)
+ax1_twin.sharey(ax2_twin)
+
+# ax2_twin.get_shared_y_axes().joined(ax0_twin, ax1_twin, ax2_twin)
+
+colors = ['#7F3C8D','#11A579','#3969AC','#F2B701','#E73F74','#80BA5A','#E68310','#008695','#CF1C90','#f97b72','#4b4b8f','#A5AA99']
+colors = colors[1:]
+markers = ['d','o','p','s']
 
 
 for i, code in enumerate(codes3):
@@ -69,12 +76,11 @@ for i, code in enumerate(codes3):
     df['ler_per_round'] = 1 - (1 - df['p_error'])**(1/df['r'])
     df['error_bars'] = (1 - df['p_error'])**(1/df['r']-1) * df['p_std_dev'] / df['r']
 
-    # colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-    # tmp_df = df[(df['adapt'] == 1)]
-    tmp_df = df[(df['p_std_dev'] > 0)]
+    tmp_df = df[(df['r'] == 100)]
 
-    ax[2].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], fmt='o-', markersize=4, elinewidth=1.5)
-    ax2_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", label=labels[i])
+    ax[2].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
+                   fmt=f'{markers[i]}-', c=colors[i], markersize=4, elinewidth=1.5, label=labels[i],)
+    ax2_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", c=colors[i])
 
     ax[2].set_title('nonadaptive [[4,2,2]]-HGP codes')
     ax[2].set_yscale('log')
@@ -90,11 +96,10 @@ for i, code in enumerate(codes2):
     df['ler_per_round'] = 1 - (1 - df['p_error'])**(1/df['r'])
     df['error_bars'] = (1 - df['p_error'])**(1/df['r']-1) * df['p_std_dev'] / df['r']
 
-    # colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-    # tmp_df = df[(df['p_std_dev'] > 0)]
-    tmp_df = df
-    ax[1].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], fmt='o-', markersize=4, elinewidth=1.5)
-    ax1_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", label=labels2[i])
+    tmp_df = df[(df['r'] == 100)]
+    ax[1].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
+                   fmt=f'{markers[i]}-', c=colors[i], markersize=4, elinewidth=1.5, label=labels2[i],)
+    ax1_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", c=colors[i])
 
     ax[1].set_title('HGP codes')
     ax[1].set_yscale('log')
@@ -110,21 +115,26 @@ for i, code in enumerate(codes):
     df['ler_per_round'] = 1 - (1 - df['p_error'])**(1/df['r'])
     df['error_bars'] = (1 - df['p_error'])**(1/df['r']-1) * df['p_std_dev'] / df['r']
 
-    # colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    tmp_df = df[(df['r'] == 100)]
 
-    tmp_df = df
-    tmp_df = df[(df['p_std_dev'] > 0)]
-
-    ax[0].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], fmt='o-', markersize=4, elinewidth=1.5)
-    ax0_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", label=labels[i])
+    ax[0].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
+                   fmt=f'{markers[i]}-', c=colors[i], markersize=4, elinewidth=1.5, label=labels[i],)
+    ax0_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", c=colors[i])
     ax[0].set_title('[[4,2,2]]-HGP codes')
     ax[0].set_yscale('log')
     ax[0].set_xscale('log')
 
 
-ax2_twin.legend(loc='lower right', frameon = True , facecolor = 'white', framealpha=1)
-ax1_twin.legend(loc='lower right', frameon = True , facecolor = 'white', framealpha=1)
-ax0_twin.legend(loc='upper left', frameon = True , facecolor = 'white', framealpha=1)
+handles1, labels1 = ax[0].get_legend_handles_labels()
+handles2, labels2 = ax[1].get_legend_handles_labels()
+handles3, labels3 = ax[2].get_legend_handles_labels()
+
+first_legend = ax0_twin.legend(handles1, labels1, loc='upper left', fontsize=10)
+ax0_twin.add_artist(first_legend)
+second_legend = ax1_twin.legend(handles2, labels2, loc='lower right', fontsize=10)
+ax1_twin.add_artist(second_legend)
+third_legend = ax2_twin.legend(handles3, labels3, loc='lower right', fontsize=10)
+ax2_twin.add_artist(third_legend)
 
 ax[0].set_ylabel(r"Logical error rate per round, $\epsilon_L$")
 ax[2].set_xlabel(r"Error rate, $p$")
