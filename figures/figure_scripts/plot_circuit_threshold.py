@@ -26,7 +26,7 @@ codes = [
 codes3 = [
     "HGP_C422_200_4",
     "HGP_C422_800_16",
-    # "HGP_C422_1800_36",
+    "HGP_C422_1800_36",
     # "HGP_C422_3200_64",
 ]
 
@@ -78,11 +78,11 @@ for i, code in enumerate(codes3):
 
     tmp_df = df[(df['r'] == 100)]
 
-    ax[2].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
+    ax[2].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'],
                    fmt=f'{markers[i]}-', c=colors[i], markersize=4, elinewidth=1.5, label=labels[i],)
     ax2_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", c=colors[i])
 
-    ax[2].set_title('nonadaptive [[4,2,2]]-HGP codes')
+    ax[2].set_title('Nonadaptive [[4,2,2]]-HGP codes')
     ax[2].set_yscale('log')
     ax[2].set_xscale('log')
 
@@ -97,7 +97,7 @@ for i, code in enumerate(codes2):
     df['error_bars'] = (1 - df['p_error'])**(1/df['r']-1) * df['p_std_dev'] / df['r']
 
     tmp_df = df[(df['r'] == 100)]
-    ax[1].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
+    ax[1].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'],
                    fmt=f'{markers[i]}-', c=colors[i], markersize=4, elinewidth=1.5, label=labels2[i],)
     ax1_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", c=colors[i])
 
@@ -117,19 +117,23 @@ for i, code in enumerate(codes):
 
     tmp_df = df[(df['r'] == 100)]
 
-    ax[0].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
+    ax[0].errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'],
                    fmt=f'{markers[i]}-', c=colors[i], markersize=4, elinewidth=1.5, label=labels[i],)
     ax0_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--", c=colors[i])
     ax[0].set_title('[[4,2,2]]-HGP codes')
     ax[0].set_yscale('log')
     ax[0].set_xscale('log')
 
+labels = ['(a)', '(b)', '(c)']
+for a, label in zip(ax, labels):
+    a.text(0.05, 0.95, label, transform=a.transAxes, fontsize=12,
+            verticalalignment='top', horizontalalignment='left')
 
 handles1, labels1 = ax[0].get_legend_handles_labels()
 handles2, labels2 = ax[1].get_legend_handles_labels()
 handles3, labels3 = ax[2].get_legend_handles_labels()
 
-first_legend = ax0_twin.legend(handles1, labels1, loc='upper left', fontsize=10)
+first_legend = ax0_twin.legend(handles1, labels1, loc='lower right', fontsize=10, framealpha=0.7)
 ax0_twin.add_artist(first_legend)
 second_legend = ax1_twin.legend(handles2, labels2, loc='lower right', fontsize=10)
 ax1_twin.add_artist(second_legend)

@@ -12,7 +12,7 @@ path, filename = os.path.split(full_path)
 # plt.rcParams['xtick.direction'] = 'in'
 # plt.rcParams['ytick.direction'] = 'in'
 plt.rcParams['axes.linewidth'] = 1
-folder = "lacross"
+folder = "embedded"
 r = 100
 
 fig, ax = plt.subplots(1, 1, figsize=(4,3))
@@ -102,7 +102,7 @@ for i, code in enumerate(codes):
     tmp_df = df[(df['r'] == r)]
 
     if not tmp_df.empty:
-        ax.errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
+        ax.errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'],
                     fmt=f'{markers[i]}-', markersize=4, elinewidth=1.5, c=colors[i], label=labels[i])
         ax_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--",  c=colors[i])
         ax.set_yscale('log')
@@ -120,8 +120,8 @@ for i, code in enumerate(codes2):
     tmp_df = df[(df['r'] == r)]
 
     if not tmp_df.empty:
-        ax.errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
-                    fmt=f'{markers[i+len(codes)]}-', markersize=4, 
+        ax.errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'],
+                    fmt=f'{markers[i+len(codes)]}-', markersize=4,
                     elinewidth=1.5, c=colors[i+len(codes)], label=labels2[i],)
         ax_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--",  c=colors[i+len(codes)])
 
@@ -139,8 +139,8 @@ for i, code in enumerate(codes3):
 
     tmp_df = df[(df['r'] == r)]
     if not tmp_df.empty:
-        ax.errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'], 
-                    fmt=f'{markers[i+len(codes)+len(codes2)]}-', markersize=4, elinewidth=1.5, 
+        ax.errorbar(tmp_df['p_phys'], tmp_df['ler_per_round'], tmp_df['error_bars'],
+                    fmt=f'{markers[i+len(codes)+len(codes2)]}-', markersize=4, elinewidth=1.5,
                     c=colors[i+len(codes)+len(codes2)], label=labels[i],)
         ax_twin.plot(tmp_df['p_phys'], tmp_df['num_CNOTs'], linestyle="--",  c=colors[i+len(codes)+len(codes2)])
 
