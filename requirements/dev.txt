@@ -6,3 +6,5 @@ stim>=1.13.0
 scipy>=1.14.1
 ldpc>=0.1.51
 bposd>=1.6
+PyMatching==2.2.1
+filelock==3.16.1
