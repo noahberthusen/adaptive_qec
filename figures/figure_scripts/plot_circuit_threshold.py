@@ -11,7 +11,7 @@ path, filename = os.path.split(full_path)
 # plt.rc('font', family='serif')
 # plt.rcParams['xtick.direction'] = 'in'
 # plt.rcParams['ytick.direction'] = 'in'
-plt.rcParams['axes.linewidth'] = 1
+plt.rcParams['axes.linewidth'] = 1.2
 # folder = "embedded/expander"
 folder = "expander"
 

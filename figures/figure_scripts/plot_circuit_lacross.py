@@ -11,7 +11,7 @@ path, filename = os.path.split(full_path)
 # plt.rc('font', family='serif')
 # plt.rcParams['xtick.direction'] = 'in'
 # plt.rcParams['ytick.direction'] = 'in'
-plt.rcParams['axes.linewidth'] = 1
+plt.rcParams['axes.linewidth'] = 1.2
 folder = "lacross"
 r = 100
 
@@ -35,8 +35,10 @@ codes3 = [
 codes2 = [
     "HGP_34_4",
     # "HGP_52_4",
-    "HGP_130_4",
+    # "HGP_130_4",
     # "HGP_244_4",
+    "HGP_452_4",
+
 ]
 
 labels = [
@@ -49,8 +51,10 @@ labels = [
 labels2 = [
     "HGP [[34,4,3]]",
     # "[[52,4,4]]",
-    "HGP [[130,4,6]]",
-    # "[[244,4,8]]"
+    # "HGP [[130,4,6]]",
+    # "HGP [[244,4,8]]"
+    "HGP [[452,4,10]]"
+
 ]
 
 
@@ -68,8 +72,8 @@ codes6 = [
 codes5 = [
     # "HGP_80_16",
     "HGP_208_16",
-    "HGP_400_16",
-    # "HGP_976_16"
+    # "HGP_400_16",
+    "HGP_976_16"
 ]
 
 labels4 = [
@@ -80,8 +84,8 @@ labels4 = [
 labels5 = [
     # "HGP [[80,16,3]]",
     "HGP [[208,16,6]]",
-    "HGP [[400,16,8]]",
-    # "HGP [[976,16,12]]"
+    # "HGP [[400,16,8]]",
+    "HGP [[976,16,12]]"
 ]
 
 ax_twin1 = ax[0].twinx()
@@ -154,6 +158,9 @@ def plot(ax, ax_twin, codes, codes2, codes3, labels, labels2):
 ax[0].set_ylabel(r"Logical error rate per round, $\epsilon_L$")
 ax[1].set_ylabel(r"Logical error rate per round, $\epsilon_L$")
 
+# fig.supylabel(r"Logical error rate per round, $\epsilon_L$")
+# fig.supxlabel(r"Error rate, $p$")
+
 ax[1].set_xlabel(r"Error rate, $p$")
 ax_twin1.set_ylabel("Average CNOT gates per round")
 ax_twin2.set_ylabel("Average CNOT gates per round")
@@ -162,19 +169,19 @@ plot(ax[0], ax_twin1, codes, codes2, codes3, labels, labels2)
 plot(ax[1], ax_twin2, codes4, codes5, codes6, labels4, labels5)
 
 handles1, labels1 = ax[0].get_legend_handles_labels()
-first_legend = ax[0].legend(handles1, labels1, loc='lower right', fontsize=8.5, framealpha=0.7)
+first_legend = ax[0].legend(handles1, labels1, loc='upper left', fontsize=8.5, framealpha=0.7)
 first_legend.remove()
 ax_twin1.add_artist(first_legend)
 
 handles2, labels2 = ax[1].get_legend_handles_labels()
-second_legend = ax[1].legend(handles2, labels2, loc='lower right', fontsize=8.5, framealpha=0.7)
+second_legend = ax[1].legend(handles2, labels2, loc='upper left', fontsize=8.5, framealpha=0.7)
 second_legend.remove()
 ax_twin2.add_artist(second_legend)
 
 plot_labels = ['(a)', '(b)']
 for a, label in zip(ax, plot_labels):
-    a.text(0.05, 0.95, label, transform=a.transAxes, fontsize=12,
-            verticalalignment='top', horizontalalignment='left')
+    a.text(0.98, 0.03, label, transform=a.transAxes, fontsize=12,
+            verticalalignment='bottom', horizontalalignment='right')
 
 
 plt.savefig(os.path.join(path, "../memory_circuit_lacross.png"), dpi=600, bbox_inches="tight")
