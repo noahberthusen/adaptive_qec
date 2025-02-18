@@ -2,7 +2,6 @@ import numpy as np
 from classical_code import *
 from quantum_code import *
 import stim
-from scipy.sparse import lil_matrix
 from ldpc import BpDecoder, BpOsdDecoder
 from ldpc.bplsd_decoder import BpLsdDecoder
 import argparse
@@ -10,6 +9,7 @@ from result_memory import save_new_res, Result
 from pathlib import Path
 from filelock import Timeout, FileLock
 import os
+from circuit_utils import generate_hgp_circuit, generate_422_hgp_circuit, generate_422_circuit
 
 def main(args):
     qcode_fname = args.q
@@ -36,7 +36,6 @@ def main(args):
 
     stab_type = False
 
-    H = Hx if stab_type else Hz
     hgp_H = hgp_Hx if stab_type else hgp_Hz
 
     qec_aug_dec_Hx = np.hstack([hgp_Hx, np.eye(hgp_Hx.shape[0], dtype=int)])
@@ -46,8 +45,6 @@ def main(args):
     qec_dec_Hx = hgp_Hx
     qec_dec_Hz = hgp_Hz
     qec_channel_probs = [0.01]*hgp_H.shape[1]
-
-    L = Lx if stab_type else Lz
 
 
     res_f_name = f"./results/{Path(qcode_fname).name}.res"
@@ -110,6 +107,7 @@ def main(args):
 
 
     def decode(curr_synd, augment, stab_type):
+        H = Hx if stab_type else Hz
         guessed_error = np.zeros(H.shape[1], dtype=int)
         qec_aug_dec = qec_aug_decX if stab_type else qec_aug_decZ
         qec_dec = qec_decX if stab_type else qec_decZ
@@ -128,6 +126,11 @@ def main(args):
             block_correction = np.array([0,0,0,1], dtype=int) if stab_type else np.array([1,0,0,0], dtype=int)
             corrections = np.concatenate([block_correction if x == 1 else np.zeros(4, dtype=int) for x in curr_qed_synd])
             guessed_error ^= corrections
+
+            # pot_corrections = np.eye(4, dtype=int)
+            # corrections = np.concatenate([pot_corrections[np.random.randint(0,4)] if x == 1 else np.zeros(4, dtype=int) for x in curr_qed_synd])
+            # guessed_error ^= corrections
+            # curr_hgp_synd ^= ((H @ corrections) % 2)[qcode.qedxm:]
 
             #######################
             if soft:
@@ -192,44 +195,37 @@ def main(args):
     x_checks = np.arange(cn,cn+cmx)
     z_checks = np.arange(cn+cmx,cn+cmx+cmz)
 
-    precomputed_x_checks_circuits = np.empty(cmx, dtype=object)
-    for x in np.arange(qcode.xm):
-        c = stim.Circuit()
-        gen_qbts = data_qbts[np.where(Hx[x])[0]]
-        for qbt in gen_qbts:
-            path_qbts = [x_checks[x], qbt]
-            c.append("CNOT", path_qbts)
-            c.append("DEPOLARIZE2", path_qbts, qubit_error_rate)
-        precomputed_x_checks_circuits[x] = c
 
-    def prepare_x_checks(checks):
-        c = stim.Circuit()
-        if len(checks) == 0: return c
-        c.append("H", [x_checks[x_check] for x_check in checks])
-        c.append("DEPOLARIZE1", [x_checks[x_check] for x_check in checks], qubit_error_rate)
-        for x in checks:
-            c += precomputed_x_checks_circuits[x]
-        c.append("H", [x_checks[x_check] for x_check in checks])
-        c.append("DEPOLARIZE1", [x_checks[x_check] for x_check in checks], qubit_error_rate)
-        return c
+    if qcode.qedxm:
+        precomputed_x_checks_circuit = generate_422_hgp_circuit(Hx[qcode.qedxm:], x_checks[qcode.qedxm:], True, qubit_error_rate)
+    else:
+        precomputed_x_checks_circuit = generate_hgp_circuit(Hx, x_checks, True, qubit_error_rate)
 
-    precomputed_z_checks_circuits = np.empty(cmz, dtype=object)
-    for z in np.arange(qcode.zm):
-        c = stim.Circuit()
-        gen_qbts = data_qbts[np.where(Hz[z])[0]]
-        for qbt in gen_qbts:
-            path_qbts = [qbt, z_checks[z]]
-            c.append("CNOT", path_qbts)
-            c.append("DEPOLARIZE2", path_qbts, qubit_error_rate)
-        precomputed_z_checks_circuits[z] = c
+    if qcode.qedxm:
+        precomputed_z_checks_circuit = generate_422_hgp_circuit(Hz[qcode.qedzm:], z_checks[qcode.qedzm:], False, qubit_error_rate)
+    else:
+        precomputed_z_checks_circuit = generate_hgp_circuit(Hz, z_checks, False, qubit_error_rate)
 
-    def prepare_z_checks(checks):
-        c = stim.Circuit()
-        if len(checks) == 0: return c
-        for z in checks:
-            c += precomputed_z_checks_circuits[z]
-        return c
+    def prepare_x_checks(curr_x_checks):
+        if qcode.qedxm:
+            if adapt:
+                return generate_422_hgp_circuit(Hx[curr_x_checks], x_checks[curr_x_checks], True, qubit_error_rate)
+            else:
+                return precomputed_x_checks_circuit
+        else:
+            return precomputed_x_checks_circuit
 
+    def prepare_z_checks(curr_z_checks):
+        if qcode.qedxm:
+            if adapt:
+                return generate_422_hgp_circuit(Hz[curr_z_checks], z_checks[curr_z_checks], False, qubit_error_rate)
+            else:
+                return precomputed_z_checks_circuit
+        else:
+            return precomputed_z_checks_circuit
+
+    if qcode.qedxm:
+        precomputed_qed_checks_circuit = generate_422_circuit(Hx[:qcode.qedxm], x_checks[:qcode.qedxm], z_checks[:qcode.qedxm], qubit_error_rate)
 
     class Simulation:
         def __init__(self, num_rounds, stab_type, concat=True, adaptive=True):
@@ -238,6 +234,8 @@ def main(args):
             self.curr_round = 1
             self.concat = concat
             self.adaptive = adaptive
+
+            # self.tmp = np.array([], dtype=int)
 
             self.z_check_history = np.ones(cmz, dtype=int)
             self.x_check_history = np.ones(cmx, dtype=int)
@@ -251,25 +249,34 @@ def main(args):
 
             if self.stab_type:
                 self.c.append("H", [qbt for qbt in data_qbts])
-                self.c += prepare_z_checks(np.arange(cmz)).without_noise()
+                for z in np.arange(qcode.zm):
+                    gen_qbts = data_qbts[np.where(Hz[z])[0]]
+                    for qbt in gen_qbts:
+                        path_qbts = [qbt, z_checks[z]]
+                        self.c.append("CNOT", path_qbts)
                 for i, z_check in enumerate(np.arange(cmz)):
                     self.c.append("MR", z_checks[z_check])
             else:
-                self.c += prepare_x_checks(np.arange(cmx)).without_noise()
+                self.c.append("H", x_checks)
+                for x in np.arange(qcode.xm):
+                    gen_qbts = data_qbts[np.where(Hx[x])[0]]
+                    for qbt in gen_qbts:
+                        path_qbts = [x_checks[x], qbt]
+                        self.c.append("CNOT", path_qbts)
+                self.c.append("H", x_checks)
                 for i, x_check in enumerate(np.arange(cmx)):
                     self.c.append("MR", x_checks[x_check])
 
             self.s.do_circuit(self.c)
             if self.stab_type:
-                self.z_syndrome_history[0] = self.s.current_measurement_record()
+                self.z_syndrome_history[:] = self.s.current_measurement_record()
             else:
-                self.x_syndrome_history[0] = self.s.current_measurement_record()
+                self.x_syndrome_history[:] = self.s.current_measurement_record()
 
 
         def QED(self):
             def measure_z_qed_checks():
                 c = stim.Circuit()
-                c += prepare_z_checks(np.arange(qcode.qedzm))
                 c.append("X_ERROR", [z_checks[z_check] for z_check in np.arange(qcode.qedzm)], meas_error_rate)
                 c.append("MR", [z_checks[z_check] for z_check in np.arange(qcode.qedzm)])
                 c.append("X_ERROR", [z_checks[z_check] for z_check in np.arange(qcode.qedzm)], meas_error_rate)
@@ -277,14 +284,13 @@ def main(args):
 
             def measure_x_qed_checks():
                 c = stim.Circuit()
-                c += prepare_x_checks(np.arange(qcode.qedxm))
                 c.append("X_ERROR", [x_checks[x_check] for x_check in np.arange(qcode.qedxm)], meas_error_rate)
                 c.append("MR", [x_checks[x_check] for x_check in np.arange(qcode.qedxm)])
                 c.append("X_ERROR", [x_checks[x_check] for x_check in np.arange(qcode.qedxm)], meas_error_rate)
                 return c
 
-
             c = stim.Circuit()
+            c += precomputed_qed_checks_circuit
             if self.stab_type:
                 c += measure_x_qed_checks()
                 c += measure_z_qed_checks()
@@ -296,18 +302,20 @@ def main(args):
         def QEC(self):
             def measure_z_qec_checks(curr_z_checks):
                 c = stim.Circuit()
-                c += prepare_z_checks(curr_z_checks)
-                c.append("X_ERROR", [z_checks[z_check] for z_check in curr_z_checks], meas_error_rate)
-                c.append("MR", [z_checks[z_check] for z_check in curr_z_checks])
-                c.append("X_ERROR", [z_checks[z_check] for z_check in curr_z_checks], meas_error_rate)
+                if np.any(curr_z_checks):
+                    c += prepare_z_checks(curr_z_checks)
+                    c.append("X_ERROR", [z_checks[z_check] for z_check in curr_z_checks], meas_error_rate)
+                    c.append("MR", [z_checks[z_check] for z_check in curr_z_checks])
+                    c.append("X_ERROR", [z_checks[z_check] for z_check in curr_z_checks], meas_error_rate)
                 return c
 
             def measure_x_qec_checks(curr_x_checks):
                 c = stim.Circuit()
-                c += prepare_x_checks(curr_x_checks)
-                c.append("X_ERROR", [x_checks[x_check] for x_check in curr_x_checks], meas_error_rate)
-                c.append("MR", [x_checks[x_check] for x_check in curr_x_checks])
-                c.append("X_ERROR", [x_checks[x_check] for x_check in curr_x_checks], meas_error_rate)
+                if np.any(curr_x_checks):
+                    c += prepare_x_checks(curr_x_checks)
+                    c.append("X_ERROR", [x_checks[x_check] for x_check in curr_x_checks], meas_error_rate)
+                    c.append("MR", [x_checks[x_check] for x_check in curr_x_checks])
+                    c.append("X_ERROR", [x_checks[x_check] for x_check in curr_x_checks], meas_error_rate)
                 return c
 
             c = stim.Circuit()
@@ -358,14 +366,9 @@ def main(args):
 
         def simulate(self):
             for _ in range(1, self.num_rounds+1):
-                self.s.depolarize1(*data_qbts, p=qubit_error_rate)
-
                 self.curr_z_checks = np.zeros(cmz)
                 self.curr_x_checks = np.zeros(cmx)
-                if (not self.adaptive):
-                    self.curr_z_checks = np.arange(cmz)
-                    self.curr_x_checks = np.arange(cmx)
-                else:
+                if qcode.qedxm:
                     QED_circuit = self.QED()
                     self.s.do_circuit(QED_circuit)
                     self.c += QED_circuit
@@ -378,20 +381,29 @@ def main(args):
 
                         z_qed_synd_diff = self.z_syndrome_history[self.curr_round][:qcode.qedzm] ^ self.z_syndrome_history[0][:qcode.qedzm]
                         x_qed_synd_diff = self.x_syndrome_history[self.curr_round][:qcode.qedxm]
-                        self.curr_z_checks = sorted(get_overlapping(z_qed_synd_diff, False))
-                        self.curr_x_checks = sorted(get_overlapping(x_qed_synd_diff, True))
                     else:
                         self.z_syndrome_history[self.curr_round][:qcode.qedzm] = meas[-(qcode.qedzm+qcode.qedxm):-qcode.qedzm]
                         self.x_syndrome_history[self.curr_round][:qcode.qedxm] = meas[-qcode.qedxm:]
 
                         x_qed_synd_diff = self.x_syndrome_history[self.curr_round][:qcode.qedxm] ^ self.x_syndrome_history[0][:qcode.qedxm]
                         z_qed_synd_diff = self.z_syndrome_history[self.curr_round][:qcode.qedzm]
-                        self.curr_x_checks = sorted(get_overlapping(x_qed_synd_diff, True))
-                        self.curr_z_checks = sorted(get_overlapping(z_qed_synd_diff, False))
 
-                    # if (_ % 10 == 0):
-                    #     self.curr_z_checks = np.arange(qcode.qedxm, cmz)
-                    #     self.curr_x_checks = np.arange(qcode.qedxm, cmx)
+
+                    if not self.adaptive:
+                        self.curr_z_checks = np.arange(qcode.qedxm, cmz)
+                        self.curr_x_checks = np.arange(qcode.qedxm, cmx)
+                    else:
+                        # if False:
+                        if (_ > 1) and ((_ - 1) % np.floor(10 * (0.001/qubit_error_rate)) == 0):
+                            self.curr_z_checks = np.arange(qcode.qedxm, cmz)
+                            self.curr_x_checks = np.arange(qcode.qedxm, cmx)
+                        else:
+                            self.curr_x_checks = sorted(get_overlapping(x_qed_synd_diff, True))
+                            self.curr_z_checks = sorted(get_overlapping(z_qed_synd_diff, False))
+                else:
+                    self.curr_z_checks = np.arange(cmz)
+                    self.curr_x_checks = np.arange(cmx)
+
 
                 confirmation_z = np.concatenate([np.ones(qcode.qedzm, dtype=int), np.zeros(cmz-qcode.qedzm, dtype=int)])
                 confirmation_z[self.curr_z_checks] = 1
@@ -399,6 +411,17 @@ def main(args):
                 confirmation_x[self.curr_x_checks] = 1
                 self.z_check_history = np.vstack([self.z_check_history, confirmation_z])
                 self.x_check_history = np.vstack([self.x_check_history, confirmation_x])
+
+                # average check weight
+                # tmp = np.array(qcode.qedxm * [4] + (cmx-qcode.qedxm) * [14])
+                # x_gens = tmp * confirmation_x
+                # z_gens = tmp * confirmation_z
+                # self.tmp = np.hstack((self.tmp, x_gens[x_gens != 0]))
+                # self.tmp = np.hstack((self.tmp, z_gens[z_gens != 0]))
+
+                # average qubit weight
+                # tmp = np.count_nonzero(np.vstack([Hx[confirmation_x == 1], Hz[confirmation_z == 1]]), axis=0)
+                # self.tmp = np.hstack((self.tmp, tmp))
 
                 QEC_circuit = self.QEC()
                 self.s.do_circuit(QEC_circuit)
@@ -442,7 +465,12 @@ def main(args):
         c = s.c
 
         success = not np.any(s.x_observables) if stab_type else (not np.any(s.z_observables))
-        num_CNOTs = (str(c).count("CX") - 1) / num_rounds
+        if qcode.qedxm:
+            num_CNOTs = (str(c).count("CX") - 1 - (num_rounds * 8)) / num_rounds + (2 * Hx.shape[1])
+        else:
+            num_CNOTs = (str(c).count("CX") - 1) / num_rounds
+
+        # num_CNOTs = np.mean(s.tmp)
 
         res = Result(concat, adapt, soft, qcode.n, qcode.k, num_rounds,
                      qubit_error_rate, meas_error_rate, num_CNOTs, 1, int(success))
@@ -456,27 +484,23 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_C422_200_4.qcode", help="Code to simulate")
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_400_16/HGP_C422_800_16.qcode", help="Code to simulate")
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_900_36/HGP_C422_1800_36.qcode", help="Code to simulate")
+    # parser.add_argument('-q', default="./codes/qcodes/expander/HGP_100_4/HGP_C422_200_4.qcode", help="Code to simulate")
+    parser.add_argument('-q', default="./codes/qcodes/surface/HGP_13_1/HGP_13_1.qcode", help="Code to simulate")
 
-    parser.add_argument('-q', default="./codes/qcodes/HGP_100_4/HGP_100_4.qcode", help="Code to simulate")
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_400_16/HGP_400_16.qcode", help="Code to simulate")
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_900_36/HGP_900_36.qcode", help="Code to simulate")
+    # parser.add_argument('-q', default="./codes/qcodes/expander/HGP_164_20/HGP_C422_328_20.qcode", help="Code to simulate")
 
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_52_10/HGP_C422_104_10.qcode", help="Code to simulate")
-    # parser.add_argument('-q', default="./codes/qcodes/HGP_52_10/HGP_52_10.qcode", help="Code to simulate")
+    # parser.add_argument('-q', default="./codes/qcodes/lacross/HGP_106_16/HGP_106_16.qcode", help="Code to simulate")
 
 
     parser.add_argument('-c', default=1, help="Concatenated decoding?")
     parser.add_argument('-a', default=1, help="QED+QEC protocol?")
     parser.add_argument('-s', default=1, help="Soft information?")
 
-    parser.add_argument('-n', default=1e4, help="Number of shots")
+    parser.add_argument('-n', default=1e5, help="Number of shots")
     parser.add_argument('-e', default=0.001, help="Qubit error rate")
     # parser.add_argument('-i', default=0.001, help="Idle error rate")
     parser.add_argument('-m', default=0.001, help="Measurement error rate")
-    parser.add_argument('-r', default=10, help="Number of rounds")
+    parser.add_argument('-r', default=100, help="Number of rounds")
 
     args = parser.parse_args()
 

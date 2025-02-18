@@ -139,9 +139,8 @@ def generate_422_circuit(H, x_checks, z_checks, p):
 
 
 if __name__ == "__main__":
-    hgp_qcode = read_qcode("./codes/qcodes/HGP_52_4/HGP_52_4.qcode")
+    hgp_qcode = read_qcode("./codes/qcodes/surface/HGP_13_1/HGP_13_1.qcode")
     qcode = hgp_qcode
-    qcode = read_qcode("./codes/qcodes/HGP_52_4/HGP_C422_104_4.qcode")
 
     hgp_Hx, hgp_Hz, hgp_Lx, hgp_Lz, _ = hgp_qcode.to_numpy()
     Hx, Hz, Lx, Lz, mapping = qcode.to_numpy()
